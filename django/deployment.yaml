@@ -1,0 +1,90 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: lugati-backend
+  labels:
+    app: lugati-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lugati-backend-container
+  template:
+    metadata:
+      labels:
+        app: lugati-backend-container
+    spec:
+      containers:
+        - name: nginx
+          image: xors/lugati-backend-nginx:v0.0.1
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: media-volume-mount 
+              mountPath: /usr/share/nginx/lugati/media
+            - name: static-volume-mount 
+              mountPath: /usr/share/nginx/lugati/static
+            - name: socket-volume-mount 
+              mountPath: /usr/share/nginx/lugati/sock
+            - name: frontend-volume-mount 
+              mountPath: /usr/share/nginx/lugati/frontend
+
+        - name: lugati-sync
+          image: xors/lugati-sshd:v0.0.1
+          ports:
+            - containerPort: 22
+          volumeMounts:
+            - name: frontend-volume-mount 
+              mountPath: /app/frontend
+          env:
+            - name: SSH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lugati-credentials
+                  key: sync-ssh-key
+
+        - name: lugati-backend
+          image: xors/lugati-online:v0.0.18
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+
+            - name: POSTGRES_HOST
+              value: postgres-service
+
+            - name: ALLOWED_HOSTS
+              value: "*"
+
+            - name: DEBUG
+              value: "False"
+          volumeMounts:
+            - name: media-volume-mount 
+              mountPath: /app/media
+            - name: static-volume-mount 
+              mountPath: /app/static
+            - name: socket-volume-mount 
+              mountPath: /app/sock
+            - name: frontend-volume-mount 
+              mountPath: /app/frontend
+      volumes:
+        - name: media-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-media-pvc
+        - name: static-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-static-pvc
+        - name: socket-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-socket-pvc
+        - name: frontend-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-front-pvc

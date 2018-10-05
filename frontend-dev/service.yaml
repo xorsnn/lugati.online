@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: lugati-frontend-dev-service
+spec:
+  selector:
+    app: lugati-frontend-dev-container
+  ports:
+  - name: sync
+    protocol: TCP
+    port: 3000
+    nodePort: 30004
+    targetPort: 3000
+  type: NodePort

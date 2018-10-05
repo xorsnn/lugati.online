@@ -1,0 +1,134 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: django-migrations
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: db-migrate
+          image: xors/lugati-online:v0.0.18
+          command: ['python', 'manage.py', 'migrate']
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+
+            - name: POSTGRES_HOST
+              value: postgres-service
+
+            - name: DEBUG
+              value: "False"
+
+        - name: init
+          image: xors/lugati-online:v0.0.18
+          command: ['python', 'manage.py', 'init']
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+                    
+            - name: LUGATI_USERS
+              valueFrom:
+                secretKeyRef:
+                  name: lugati-credentials
+                  key: users
+
+            - name: POSTGRES_HOST
+              value: postgres-service
+
+            - name: DEBUG
+              value: "False"
+
+        - name: init-frontend
+          image: xors/lugati-online:v0.0.18
+          command: ['python', 'manage.py', 'init_frontend']
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+                    
+            - name: LUGATI_USERS
+              valueFrom:
+                secretKeyRef:
+                  name: lugati-credentials
+                  key: users
+
+            - name: POSTGRES_HOST
+              value: postgres-service
+
+            - name: DEBUG
+              value: "False"
+          volumeMounts:
+            - name: frontend-volume-mount 
+              mountPath: /app/frontend
+
+        - name: collectstatic
+          image: xors/lugati-online:v0.0.18
+          command: ['python', 'manage.py', 'collectstatic', '--noinput']
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+
+            - name: POSTGRES_HOST
+              value: postgres-service
+
+            - name: DEBUG
+              value: "False"
+          volumeMounts:
+            - name: media-volume-mount 
+              mountPath: /app/media
+            - name: static-volume-mount 
+              mountPath: /app/static
+
+      containers:
+        - name: django
+          image: xors/lugati-online:v0.0.18
+          command: ['sh', '-c', 'echo "Initial procedures completed"']
+
+      volumes:
+        - name: media-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-media-pvc
+        - name: static-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-static-pvc
+        - name: frontend-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-front-pvc
+
+      restartPolicy: Never
+  backoffLimit: 5

@@ -1,0 +1,14 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: lugati-socket-pv
+  labels:
+    type: local
+spec:
+  capacity:
+    storage: 0.1Gi
+  storageClassName: standard
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: /data/lugati-pv/socket

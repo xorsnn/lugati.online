@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: lugati-backend-dev-service
+spec:
+  selector:
+    app: lugati-backend-dev-container
+  ports:
+  - name: dev
+    protocol: TCP
+    port: 8000
+    nodePort: 30003
+    targetPort: 8000
+  type: NodePort

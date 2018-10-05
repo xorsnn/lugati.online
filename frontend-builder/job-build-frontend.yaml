@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-frontend
+spec:
+  template:
+    spec:
+      initContainers:
+
+        - name: install
+          image: xors/lugati-frontend-builder:v0.0.1
+          command: ['bash', 'install.sh']
+          volumeMounts:
+            - name: media-volume-mount 
+              mountPath: /app/media
+            - name: frontend-volume-mount 
+              mountPath: /app/frontend
+
+        - name: build
+          image: xors/lugati-frontend-builder:v0.0.1
+          command: ['bash', 'build.sh'] 
+          volumeMounts:
+            - name: media-volume-mount 
+              mountPath: /app/media
+            - name: frontend-volume-mount 
+              mountPath: /app/frontend
+
+      containers:
+        - name: frontend-b
+          image: xors/lugati-frontend-builder:v0.0.1
+          command: ['sh', '-c', 'echo "Frontend build completed"']
+
+      volumes:
+        - name: media-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-media-pvc
+        - name: frontend-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-front-pvc
+
+      restartPolicy: Never
+  backoffLimit: 5

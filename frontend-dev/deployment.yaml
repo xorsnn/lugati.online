@@ -1,0 +1,26 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: lugati-frontend-dev
+  labels:
+    app: lugati-frontend-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lugati-frontend-dev-container
+  template:
+    metadata:
+      labels:
+        app: lugati-frontend-dev-container
+    spec:
+      containers:
+        - name: lugati-frontend-dev
+          image: xors/lugati-frontend-dev:v0.0.1
+          volumeMounts:
+            - name: frontend-volume-mount 
+              mountPath: /app/frontend
+      volumes:
+        - name: frontend-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-front-pvc

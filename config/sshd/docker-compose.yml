@@ -1,0 +1,8 @@
+lugati_sshd:
+  restart: always
+  container_name: lugati_sshd
+  image: xors/lugati-sshd:v0.0.1
+  environment:
+    - SSH_KEY=your_ssh_key
+  ports:
+    - "8002:22"

@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: clean-frontend
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: clean-frontend-cmd
+          image: xors/lugati-online:v0.0.18
+          command: ['python', 'manage.py', 'clean_frontend']
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: user
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+
+            - name: POSTGRES_HOST
+              value: postgres-service
+
+            - name: DEBUG
+              value: "False"
+
+          volumeMounts:
+            - name: media-volume-mount 
+              mountPath: /app/media
+            - name: static-volume-mount 
+              mountPath: /app/static
+            - name: socket-volume-mount 
+              mountPath: /app/sock
+            - name: frontend-volume-mount 
+              mountPath: /app/frontend
+      containers:
+        - name: frontend-b
+          image: xors/lugati-frontend-builder:v0.0.1
+          command: ['sh', '-c', 'echo "Frontend clean completed"']
+
+      volumes:
+        - name: media-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-media-pvc
+        - name: static-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-static-pvc
+        - name: socket-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-socket-pvc
+        - name: frontend-volume-mount
+          persistentVolumeClaim:
+            claimName: lugati-front-pvc
+
+      restartPolicy: Never
+  backoffLimit: 5
